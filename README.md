@@ -30,6 +30,28 @@ A simple web application that displays current weather information for a given U
 5.  In `script.js`, replace `noaaApiToken` value with your actual NOAA token
 6.  Open `index.html` in a web browser
 
+## Deployment
+
+This application is deployed using GitHub Pages. You can access the live version at: https://[YOUR-USERNAME].github.io/weather-app/
+
+### Deploying Your Own Instance
+
+To deploy your own instance of this application using GitHub Pages:
+
+1. Fork this repository or create your own copy
+2. Add your API keys to `script.js` as described in the Setup Instructions
+3. Go to the repository Settings on GitHub
+4. Navigate to the "Pages" section under "Code and automation"
+5. Under "Source", select "Deploy from a branch"
+6. Select the "main" branch and "/(root)" folder, then click "Save"
+7. Wait a few minutes for GitHub to build and deploy your site
+8. Access your deployed application at https://[YOUR-USERNAME].github.io/weather-app/
+
+**Note about API Keys**: When deploying publicly, consider implementing a more secure way to handle API keys, such as:
+* Using environment variables with a backend service
+* Creating a simple proxy server to hide your API keys
+* Consider adding CORS protection for your API keys
+
 ## How to Use
 
 1.  Enter a valid 5-digit US zip code in the input field

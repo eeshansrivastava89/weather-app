@@ -26,9 +26,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Weather data cache
     const weatherCache = {};
 
-    // API Keys (Note: In a production app, these should be secured)
-    const openWeatherApiKey = 'c6ec2afba9c9176f522a4084fff12891'; // Replace with your OpenWeatherMap API key
-    const noaaApiToken = 'NCuaKzVeoUaErHojaqDNBnLHTjbmfXdR'; // Replace with your NOAA API token
+    // API Keys from config.js
+    const openWeatherApiKey = CONFIG.OPEN_WEATHER_API_KEY || ''; 
+    const noaaApiToken = CONFIG.NOAA_API_TOKEN || '';
 
     // Event listeners
     searchBtn.addEventListener('click', getWeather);
