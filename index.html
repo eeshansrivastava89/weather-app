@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather App</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Weather App</h1>
+        <div class="search-box">
+            <input type="text" id="zip-code" placeholder="Enter zip code" maxlength="5">
+            <button id="search-btn">Search</button>
+        </div>
+        <div id="error-message"></div>
+        <div id="weather-container" class="hidden">
+            <div class="location">
+                <h2 id="city-name"></h2>
+                <p id="date-time"></p>
+            </div>
+            <div class="weather-info">
+                <div class="weather-icon">
+                    <img id="weather-icon" src="" alt="Weather Icon">
+                </div>
+                <div class="temperature">
+                    <h2 id="temperature"></h2>
+                    <p id="feels-like"></p>
+                </div>
+            </div>
+            <div class="details">
+                <div class="detail-item">
+                    <i class="fas fa-cloud"></i>
+                    <div>
+                        <p>Condition</p>
+                        <p id="condition"></p>
+                    </div>
+                </div>
+                <div class="detail-item">
+                    <i class="fas fa-tint"></i>
+                    <div>
+                        <p>Humidity</p>
+                        <p id="humidity"></p>
+                    </div>
+                </div>
+                <div class="detail-item">
+                    <i class="fas fa-wind"></i>
+                    <div>
+                        <p>Wind</p>
+                        <p id="wind"></p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Historical Weather Data Section -->
+            <div id="historical-data-container" class="historical-section hidden">
+                <h3>Historical Weather Data (Past 90 Days)</h3>
+                <div class="data-source-container">
+                    <span id="data-source-label" class="data-source-label"></span>
+                </div>
+                <div class="table-container">
+                    <table id="historical-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Temperature</th>
+                                <th>Condition</th>
+                                <th>Humidity</th>
+                                <th>Wind</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historical-data">
+                            <!-- Historical data will be inserted here -->
+                        </tbody>
+                    </table>
+                </div>
+                <div id="graph-container" class="graph-container hidden">
+                    <h4>Temperature Trend (Past 90 Days)</h4>
+                    <canvas id="temperature-chart"></canvas>
+                </div>
+                <div id="historical-loading" class="loading-message">Loading historical data...</div>
+                <div id="historical-error" class="error-message"></div>
+            </div>
+        </div>
+    </div>
+    <script src="noaa-api.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

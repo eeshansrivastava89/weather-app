@@ -1,0 +1,253 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    background: linear-gradient(135deg, #72b1d9, #4b6cb7);
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #333;
+}
+
+.container {
+    background-color: rgba(255, 255, 255, 0.9);
+    padding: 2rem;
+    border-radius: 1rem;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.2);
+    width: 100%;
+    max-width: 500px;
+    text-align: center;
+}
+
+h1 {
+    margin-bottom: 1.5rem;
+    color: #4b6cb7;
+}
+
+.search-box {
+    display: flex;
+    margin-bottom: 1.5rem;
+}
+
+.search-box input {
+    flex: 1;
+    padding: 0.8rem;
+    border: 1px solid #ccc;
+    border-radius: 0.5rem 0 0 0.5rem;
+    outline: none;
+    font-size: 1rem;
+}
+
+.search-box button {
+    background-color: #4b6cb7;
+    color: white;
+    border: none;
+    padding: 0 1.5rem;
+    border-radius: 0 0.5rem 0.5rem 0;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.3s;
+}
+
+.search-box button:hover {
+    background-color: #3a57a6;
+}
+
+#error-message {
+    color: #e74c3c;
+    margin-bottom: 1rem;
+    font-weight: 500;
+}
+
+.hidden {
+    display: none;
+}
+
+.location {
+    margin-bottom: 1.5rem;
+}
+
+.location h2 {
+    font-size: 2rem;
+    color: #333;
+    margin-bottom: 0.3rem;
+}
+
+.location p {
+    color: #666;
+}
+
+.weather-info {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.weather-icon img {
+    width: 100px;
+    height: 100px;
+}
+
+.temperature {
+    text-align: center;
+    margin-left: 1rem;
+}
+
+.temperature h2 {
+    font-size: 2.5rem;
+    color: #333;
+}
+
+.temperature p {
+    color: #666;
+}
+
+.details {
+    background-color: rgba(75, 108, 183, 0.1);
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1rem;
+}
+
+.detail-item {
+    display: flex;
+    align-items: center;
+}
+
+.detail-item i {
+    font-size: 1.5rem;
+    color: #4b6cb7;
+    margin-right: 0.8rem;
+}
+
+.detail-item p:first-child {
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.detail-item p:last-child {
+    font-weight: 500;
+    color: #333;
+    margin-top: 0.2rem;
+}
+
+/* Historical Data Styles */
+.historical-section {
+    margin-top: 2rem;
+    border-top: 1px solid #e1e1e1;
+    padding-top: 1.5rem;
+}
+
+.historical-section h3 {
+    color: #4b6cb7;
+    margin-bottom: 1rem;
+    font-size: 1.3rem;
+}
+
+.data-source-container {
+    margin-bottom: 12px;
+    text-align: right;
+}
+
+.data-source-label {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.data-source-label.noaa {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.data-source-label.simulated {
+    background-color: #FF9800;
+    color: white;
+}
+
+.table-container {
+    overflow-x: auto;
+    margin-bottom: 1rem;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.graph-container {
+    margin-top: 2rem;
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background-color: rgba(255, 255, 255, 0.7);
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.graph-container h4 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    color: #4b6cb7;
+    font-size: 1.1rem;
+    text-align: center;
+}
+
+#temperature-chart {
+    width: 100%;
+    height: 300px;
+    max-height: 300px;
+}
+
+#historical-table {
+    width: 100%;
+    border-collapse: collapse;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+#historical-table th,
+#historical-table td {
+    padding: 0.8rem;
+    text-align: left;
+    border-bottom: 1px solid #e1e1e1;
+}
+
+#historical-table th {
+    background-color: #4b6cb7;
+    color: white;
+    position: sticky;
+    top: 0;
+}
+
+#historical-table tr:nth-child(even) {
+    background-color: rgba(75, 108, 183, 0.05);
+}
+
+#historical-table tr:hover {
+    background-color: rgba(75, 108, 183, 0.1);
+}
+
+.loading-message {
+    color: #4b6cb7;
+    margin: 1rem 0;
+    font-style: italic;
+}
+
+.error-message {
+    color: #e74c3c;
+    margin: 1rem 0;
+    font-weight: 500;
+}
+
+/* Make container wider for historical data */
+@media (min-width: 768px) {
+    .container {
+        max-width: 800px;
+    }
+}
