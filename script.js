@@ -81,6 +81,11 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     }
 
+    // Function to convert Fahrenheit to Celsius
+    function fahrenheitToCelsius(fahrenheit) {
+        return (fahrenheit - 32) * 5/9;
+    }
+    
     // Function to display weather data
     function displayWeather(data) {
         // Show weather container
@@ -91,9 +96,15 @@ document.addEventListener('DOMContentLoaded', function() {
         const currentDate = new Date();
         dateTime.textContent = currentDate.toLocaleString();
         
-        // Update temperature
-        temperature.textContent = `${Math.round(data.main.temp)}°F`;
-        feelsLike.textContent = `Feels like ${Math.round(data.main.feels_like)}°F`;
+        // Update temperature with both Fahrenheit and Celsius
+        const tempF = Math.round(data.main.temp);
+        const tempC = Math.round(fahrenheitToCelsius(data.main.temp));
+        temperature.textContent = `${tempF}°F (${tempC}°C)`;
+        
+        // Update feels like temperature with both Fahrenheit and Celsius
+        const feelsLikeF = Math.round(data.main.feels_like);
+        const feelsLikeC = Math.round(fahrenheitToCelsius(data.main.feels_like));
+        feelsLike.textContent = `Feels like ${feelsLikeF}°F (${feelsLikeC}°C)`;
         
         // Update conditions
         condition.textContent = data.weather[0].description.charAt(0).toUpperCase() + 
@@ -359,7 +370,9 @@ document.addEventListener('DOMContentLoaded', function() {
             row.appendChild(dateCell);
             
             const tempCell = document.createElement('td');
-            tempCell.textContent = `${Math.round(dayData.temp)}°F`;
+            const tempF = Math.round(dayData.temp);
+            const tempC = Math.round(fahrenheitToCelsius(dayData.temp));
+            tempCell.textContent = `${tempF}°F (${tempC}°C)`;
             row.appendChild(tempCell);
             
             const conditionCell = document.createElement('td');
