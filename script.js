@@ -26,9 +26,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Weather data cache
     const weatherCache = {};
 
-    // API Keys from config.js
-    const openWeatherApiKey = CONFIG.OPEN_WEATHER_API_KEY || ''; 
-    const noaaApiToken = CONFIG.NOAA_API_TOKEN || '';
+    // API Keys hardcoded (since this is a toy application)
+    const openWeatherApiKey = 'c6ec2afba9c9176f522a4084fff12891';
+    const noaaApiToken = 'NCuaKzVeoUaErHojaqDNBnLHTjbmfXdR';
 
     // Event listeners
     searchBtn.addEventListener('click', getWeather);
@@ -137,13 +137,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const startDate = new Date();
         startDate.setDate(today.getDate() - 90);
         const startDateStr = startDate.toISOString().split('T')[0];
-        
-        // Verify NOAA API token is available
-        if (!noaaApiToken || noaaApiToken === 'YOUR_NOAA_TOKEN') {
-            historicalError.textContent = 'NOAA API token is required for historical data. Please add your token in config.js';
-            historicalLoading.classList.add('hidden');
-            return;
-        }
         
         // Fetch NOAA historical data
         fetchNearestStation(lat, lon, startDateStr, endDate, noaaApiToken)

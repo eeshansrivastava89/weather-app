@@ -24,11 +24,10 @@ A simple web application that displays current weather information for a given U
 ## Setup Instructions
 
 1.  Clone this repository
-2.  Sign up for a free API key at [OpenWeatherMap](https://openweathermap.org/api)
-3.  Open `script.js` and replace `openWeatherApiKey` value with your actual API key
-4.  For historical weather data, get a free API token from [NOAA CDO](https://www.ncdc.noaa.gov/cdo-web/token)
-5.  In `script.js`, replace `noaaApiToken` value with your actual NOAA token
-6.  Open `index.html` in a web browser
+2.  Open `index.html` in a web browser
+3.  Start searching for weather by zip code
+
+Note: This version includes hardcoded API keys for both OpenWeatherMap and NOAA APIs for demonstration purposes. In a real application, you would need to register for your own API keys.
 
 ## Deployment
 
@@ -39,19 +38,14 @@ This application is deployed using GitHub Pages. You can access the live version
 To deploy your own instance of this application using GitHub Pages:
 
 1.  Fork this repository or create your own copy
-2.  Add your API keys to `script.js` as described in the Setup Instructions
-3.  Go to the repository Settings on GitHub
-4.  Navigate to the "Pages" section under "Code and automation"
-5.  Under "Source", select "Deploy from a branch"
-6.  Select the "main" branch and "/(root)" folder, then click "Save"
-7.  Wait a few minutes for GitHub to build and deploy your site
-8.  Access your deployed application at https://\[YOUR-USERNAME\].github.io/weather-app/
+2.  Go to the repository Settings on GitHub
+3.  Navigate to the "Pages" section under "Code and automation"
+4.  Under "Source", select "Deploy from a branch"
+5.  Select the "main" branch and "/(root)" folder, then click "Save"
+6.  Wait a few minutes for GitHub to build and deploy your site
+7.  Access your deployed application at https://\[YOUR-USERNAME\].github.io/weather-app/
 
-**Note about API Keys**: When deploying publicly, consider implementing a more secure way to handle API keys, such as:
-
-*   Using environment variables with a backend service
-*   Creating a simple proxy server to hide your API keys
-*   Consider adding CORS protection for your API keys
+The application has API keys included for demonstration purposes.
 
 ## How to Use
 
@@ -94,20 +88,7 @@ This app uses NOAA Climate Data Online (CDO) API for historical weather data:
 
 ### Using NOAA's Historical Weather Data
 
-To get the most accurate historical weather information:
-
-**Register for a free NOAA API token:**
-
-*   Visit: https://www.ncdc.noaa.gov/cdo-web/token
-*   You'll receive an email with your token immediately
-
-**Add your token to the application:**
-
-*   Open `script.js`
-*   Find: `const noaaApiToken = 'YOUR_NOAA_TOKEN';`
-*   Replace with your actual token from NOAA
-
-**How the NOAA integration works:**
+The application is already configured to use NOAA's historical weather data with an included API token. Here's how the integration works:
 
 *   App finds the nearest weather station to the zip code's coordinates
 *   Retrieves 90 days of historical data from that station
