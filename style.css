@@ -7,11 +7,13 @@
 
 body {
     background: linear-gradient(135deg, #72b1d9, #4b6cb7);
-    height: 100vh;
+    min-height: 100vh;
     display: flex;
     justify-content: center;
-    align-items: center;
+    align-items: flex-start;
+    padding: 2rem 0;
     color: #333;
+    overflow-y: auto;
 }
 
 .container {
