@@ -211,7 +211,10 @@ h1 {
 #historical-table {
     width: 100%;
     border-collapse: collapse;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    border: 2px solid #4b6cb7;
+    border-radius: 8px;
+    overflow: hidden;
 }
 
 #historical-table th,
@@ -219,6 +222,7 @@ h1 {
     padding: 0.8rem;
     text-align: left;
     border-bottom: 1px solid #e1e1e1;
+    border-right: 1px solid #e1e1e1;
 }
 
 #historical-table th {
