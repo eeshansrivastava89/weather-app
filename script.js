@@ -126,7 +126,7 @@ document.addEventListener('DOMContentLoaded', function() {
         historicalError.textContent = '';
         historicalData.innerHTML = '';            // Check if we have cached data for this zip code
         if (weatherCache[zipCode] && weatherCache[zipCode].timestamp > Date.now() - 3600000) {
-            displayHistoricalWeather(weatherCache[zipCode].data, zipCode, weatherCache[zipCode].dataSource || 'simulated');
+            displayHistoricalWeather(weatherCache[zipCode].data, zipCode);
             return;
         }
         
@@ -138,225 +138,58 @@ document.addEventListener('DOMContentLoaded', function() {
         startDate.setDate(today.getDate() - 90);
         const startDateStr = startDate.toISOString().split('T')[0];
         
-        // Try to get NOAA historical data first
-        if (noaaApiToken && noaaApiToken !== 'YOUR_NOAA_TOKEN') {
-            // First, find the nearest weather station
-            fetchNearestStation(lat, lon, startDateStr, endDate, noaaApiToken)
-                .then(stationData => {
-                    if (!stationData || !stationData.results || stationData.results.length === 0) {
-                        throw new Error('No weather stations found near this location');
-                    }
-                    
-                    // Get the station ID
-                    const stationId = stationData.results[0].id;
-                    
-                    // Now fetch the data from this station
-                    return fetchStationData(stationId, startDateStr, endDate, noaaApiToken);
-                })
-                .then(historicalData => {
-                    if (!historicalData || !historicalData.results || historicalData.results.length === 0) {
-                        throw new Error('No historical data available for this location');
-                    }
-                    
-                    // Process the NOAA data into our format
-                    const processedData = processNoaaData(historicalData.results);
-                    
-                    // Cache the data
-                    weatherCache[zipCode] = {
-                        data: processedData,
-                        dataSource: 'noaa',
-                        timestamp: Date.now()
-                    };
-                    
-                    // Display the data
-                    displayHistoricalWeather(processedData, zipCode, 'noaa');
-                })
-                .catch(error => {
-                    console.error('Error fetching NOAA data:', error);
-                    historicalError.textContent = `Error: ${error.message}. Falling back to forecast and simulated data.`;
-                    
-                    // Fall back to forecast + simulated data
-                    fetchForecastAndSimulate(lat, lon, zipCode);
-                });
-        } else {
-            // No NOAA API token, use forecast + simulated data
-            fetchForecastAndSimulate(lat, lon, zipCode);
+        // Verify NOAA API token is available
+        if (!noaaApiToken || noaaApiToken === 'YOUR_NOAA_TOKEN') {
+            historicalError.textContent = 'NOAA API token is required for historical data. Please add your token in config.js';
+            historicalLoading.classList.add('hidden');
+            return;
         }
-    }
-    
-    // Function to fetch forecast data and simulate the rest
-    function fetchForecastAndSimulate(lat, lon, zipCode) {
-        fetch(`https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&units=imperial&appid=${openWeatherApiKey}`)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Unable to fetch forecast data');
+        
+        // Fetch NOAA historical data
+        fetchNearestStation(lat, lon, startDateStr, endDate, noaaApiToken)
+            .then(stationData => {
+                if (!stationData || !stationData.results || stationData.results.length === 0) {
+                    throw new Error('No weather stations found near this location');
                 }
-                return response.json();
-            })
-            .then(data => {
-                // Get actual forecast data for 5 days
-                const forecastData = processForecastData(data);
                 
-                // Generate simulated data for the remaining days
-                const simulatedData = generateSimulatedData(forecastData, zipCode);
+                // Get the station ID
+                const stationId = stationData.results[0].id;
+                
+                // Now fetch the data from this station
+                return fetchStationData(stationId, startDateStr, endDate, noaaApiToken);
+            })
+            .then(historicalData => {
+                if (!historicalData || !historicalData.results || historicalData.results.length === 0) {
+                    throw new Error('No historical data available for this location');
+                }
+                
+                // Process the NOAA data into our format
+                const processedData = processNoaaData(historicalData.results);
                 
                 // Cache the data
                 weatherCache[zipCode] = {
-                    data: simulatedData,
-                    dataSource: 'simulated',
+                    data: processedData,
                     timestamp: Date.now()
                 };
                 
                 // Display the data
-                displayHistoricalWeather(simulatedData, zipCode, 'simulated');
+                displayHistoricalWeather(processedData, zipCode);
             })
             .catch(error => {
-                console.error('Error fetching forecast data:', error);
-                historicalError.textContent = '';
-                
-                // If the forecast data fails, generate all simulated data
-                const simulatedData = generateSimulatedData([], zipCode);
-                
-                // Cache the data
-                weatherCache[zipCode] = {
-                    data: simulatedData,
-                    dataSource: 'simulated',
-                    timestamp: Date.now()
-                };
-                
-                // Display the data
-                displayHistoricalWeather(simulatedData, zipCode, 'simulated');
+                console.error('Error fetching NOAA data:', error);
+                historicalError.textContent = `Error: ${error.message}. Please try a different location or check your NOAA API token.`;
+                historicalLoading.classList.add('hidden');
             });
-    }
-    
-    // Process the 5-day forecast data
-    function processForecastData(data) {
-        const processed = [];
-        const today = new Date();
-        
-        // Group by day and get one reading per day
-        const groupedByDay = {};
-        
-        data.list.forEach(item => {
-            const date = new Date(item.dt * 1000);
-            const dateStr = date.toISOString().split('T')[0];
-            
-            if (!groupedByDay[dateStr]) {
-                groupedByDay[dateStr] = [];
-            }
-            
-            groupedByDay[dateStr].push({
-                date: date,
-                temp: item.main.temp,
-                condition: item.weather[0].description,
-                humidity: item.main.humidity,
-                wind: item.wind.speed
-            });
-        });
-        
-        // Get one reading per day (noon if available)
-        Object.keys(groupedByDay).forEach(dateStr => {
-            const dayData = groupedByDay[dateStr];
-            let selectedReading;
-            
-            // Try to get reading closest to noon
-            const noonReadings = dayData.map(reading => {
-                const hour = reading.date.getHours();
-                return {
-                    reading,
-                    distance: Math.abs(hour - 12)
-                };
-            }).sort((a, b) => a.distance - b.distance);
-            
-            selectedReading = noonReadings[0].reading;
-            processed.push(selectedReading);
-        });
-        
-        return processed;
-    }
-    
-    // Generate simulated historical weather data
-    function generateSimulatedData(forecastData, zipCode) {
-        const result = [...forecastData];
-        const daysNeeded = 90 - forecastData.length;
-        const today = new Date();
-        
-        // Base values for simulation (these would come from current weather in a real app)
-        let baseTemp = Math.round(40 + Math.random() * 50); // 40-90°F
-        let baseHumidity = Math.round(30 + Math.random() * 50); // 30-80%
-        let baseWind = Math.round(5 + Math.random() * 10); // 5-15 mph
-        const conditions = [
-            'clear sky', 'few clouds', 'scattered clouds', 'broken clouds', 
-            'shower rain', 'rain', 'thunderstorm', 'snow', 'mist'
-        ];
-        
-        // Generate data for past days
-        for (let i = 0; i < daysNeeded; i++) {
-            const date = new Date(today);
-            date.setDate(today.getDate() - (i + forecastData.length));
-            
-            // Add some natural variation
-            const tempVariation = Math.random() * 10 - 5; // -5 to +5
-            const humidityVariation = Math.random() * 20 - 10; // -10 to +10
-            const windVariation = Math.random() * 5 - 2.5; // -2.5 to +2.5
-            
-            // Seasonal adjustment based on month (very simplified)
-            const month = date.getMonth();
-            let seasonalAdjustment = 0;
-            
-            // Northern Hemisphere seasons (simplified)
-            if (month >= 0 && month <= 2) { // Winter
-                seasonalAdjustment = -15;
-            } else if (month >= 3 && month <= 5) { // Spring
-                seasonalAdjustment = 0;
-            } else if (month >= 6 && month <= 8) { // Summer
-                seasonalAdjustment = 15;
-            } else { // Fall
-                seasonalAdjustment = 0;
-            }
-            
-            const temp = Math.max(0, Math.min(100, baseTemp + tempVariation + seasonalAdjustment));
-            const humidity = Math.max(10, Math.min(100, baseHumidity + humidityVariation));
-            const wind = Math.max(0, baseWind + windVariation);
-            
-            // Choose a condition that makes sense for the temperature
-            let conditionIndex;
-            if (temp < 32) {
-                conditionIndex = Math.floor(Math.random() * 2) + 7; // snow or mist
-            } else if (temp > 85) {
-                conditionIndex = Math.floor(Math.random() * 3); // clear or few clouds
-            } else {
-                conditionIndex = Math.floor(Math.random() * conditions.length);
-            }
-            
-            result.push({
-                date: date,
-                temp: temp,
-                condition: conditions[conditionIndex],
-                humidity: humidity,
-                wind: wind
-            });
-            
-            // Update base values to create some trend
-            baseTemp += (Math.random() - 0.5) * 2; // Slight random drift
-            baseHumidity += (Math.random() - 0.5) * 2;
-            baseWind += (Math.random() - 0.5);
-        }
-        
-        // Sort by date (newest first)
-        result.sort((a, b) => b.date - a.date);
-        
-        return result;
     }
     
     // Display historical weather data
-    function displayHistoricalWeather(data, zipCode, dataSource = 'simulated') {
+    function displayHistoricalWeather(data, zipCode) {
         // Hide loading message
         historicalLoading.classList.add('hidden');
         
         // Set data source label
-        dataSourceLabel.textContent = dataSource === 'noaa' ? 'Source: NOAA Official Data' : 'Source: Simulated Data';
-        dataSourceLabel.className = 'data-source-label ' + dataSource;
+        dataSourceLabel.textContent = 'Source: NOAA Official Data';
+        dataSourceLabel.className = 'data-source-label noaa';
         
         // Clear previous data
         historicalData.innerHTML = '';

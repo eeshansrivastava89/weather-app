@@ -9,7 +9,7 @@ A simple web application that displays current weather information for a given U
 *   Display of humidity and wind speed
 *   Historical weather data for the past 90 days
 *   Interactive temperature trend chart showing 90-day history
-*   Clear labeling of data sources (NOAA Official or Simulated)
+*   Data directly from NOAA's official weather stations
 *   Responsive design that works on both mobile and desktop
 
 ## Technologies Used
@@ -70,7 +70,7 @@ The application displays a table of historical weather data for the past 90 days
 *   Humidity
 *   Wind speed
 
-A label at the top of the table clearly indicates whether the data comes from "NOAA Official Data" or "Simulated Data" so users always know the source of the information they're viewing.
+The data is sourced from NOAA's official weather stations, providing reliable historical weather information.
 
 ### Temperature Trend Chart
 
@@ -85,20 +85,12 @@ The temperature chart provides visual insights into seasonal patterns and temper
 
 ### Data Sources
 
-This app uses two sources for historical weather data:
-
-**NOAA Climate Data Online (CDO) API** - Primary source that provides real historical weather data
+This app uses NOAA Climate Data Online (CDO) API for historical weather data:
 
 *   Free to use with API token registration
 *   Provides actual recorded data from weather stations across the US
 *   Data includes temperature, precipitation, snow, and wind measurements
 *   The app automatically finds the nearest weather station to the requested location
-
-**Simulated Data + OpenWeatherMap Forecast** - Fallback mechanism
-
-*   Used when NOAA data is unavailable or when no NOAA token is provided
-*   Combines actual 5-day forecast from OpenWeatherMap with simulated data
-*   Simulated data uses seasonal adjustments and random variations for realism
 
 ### Using NOAA's Historical Weather Data
 
@@ -121,7 +113,6 @@ To get the most accurate historical weather information:
 *   Retrieves 90 days of historical data from that station
 *   Processes NOAA's data format (converting units as needed)
 *   Displays the processed data in the table
-*   Falls back to simulated data if any step fails
 
 **Data processing:**
 
@@ -153,7 +144,6 @@ If you encounter issues with the historical weather data:
 **No Historical Data Available**:
 
 *   Some remote locations may not have nearby weather stations
-*   The app will automatically fall back to simulated data if NOAA data is unavailable
 *   Check the console (F12 in most browsers) for detailed error messages
 *   Try a different zip code for a more populated area
 
@@ -181,7 +171,6 @@ The application consists of the following files:
     *   Weather data fetching from OpenWeatherMap
     *   Displaying current weather
     *   Coordinating historical data fetching
-    *   Fallback to simulated data when needed
 *   **noaa-api.js**: JavaScript module dedicated to NOAA API integration:
     *   Functions for finding the nearest weather station
     *   Fetching historical data from NOAA CDO API
@@ -199,4 +188,3 @@ The application consists of the following files:
     *   Temperature from tenths of Celsius to Fahrenheit
     *   Wind speed from meters/second to mph
     *   Precipitation from tenths of mm to mm
-*   If NOAA data is unavailable, the app seamlessly falls back to combined forecast + simulated data
