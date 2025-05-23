@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const condition = document.getElementById('condition');
     const humidity = document.getElementById('humidity');
     const wind = document.getElementById('wind');
+    const precipitation = document.getElementById('precipitation');
     const weatherIcon = document.getElementById('weather-icon');
     const historicalDataContainer = document.getElementById('historical-data-container');
     const historicalData = document.getElementById('historical-data');
@@ -76,7 +77,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Fetch current weather from Open-Meteo
     function fetchCurrentWeather(lat, lon, city, zipCode) {
-        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m&temperature_unit=fahrenheit&windspeed_unit=mph&timezone=auto`;
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,precipitation&temperature_unit=fahrenheit&windspeed_unit=mph&precipitation_unit=inch&timezone=auto`;
         
         fetch(url)
             .then(response => {
@@ -126,6 +127,7 @@ document.addEventListener('DOMContentLoaded', function() {
         condition.textContent = weatherDescription;
         humidity.textContent = `${current.relative_humidity_2m}%`;
         wind.textContent = `${Math.round(current.wind_speed_10m)} mph`;
+        precipitation.textContent = `${current.precipitation} in`;
         
         // Update weather icon
         weatherIcon.src = getWeatherIcon(current.weather_code);
@@ -257,7 +259,7 @@ document.addEventListener('DOMContentLoaded', function() {
     async function getForecastData(lat, lon) {
         // Using forecast for today and next few days to fill the gap from archive API
         // This ensures we have data for the most recent days
-        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,temperature_2m_mean,relative_humidity_2m_mean,weather_code,wind_speed_10m_max&temperature_unit=fahrenheit&windspeed_unit=mph&timezone=auto&forecast_days=10`;
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=weather_code,temperature_2m_max,temperature_2m_min,temperature_2m_mean,relative_humidity_2m_mean,wind_speed_10m_max,precipitation_sum&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&timezone=auto&forecast_days=8`;
         
         try {
             const response = await fetch(url);
@@ -305,7 +307,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         console.log(`Using adjusted end date for archive: ${adjustedEndDateStr} (to avoid data lag)`);
         
-        const url = `https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lon}&start_date=${startDate}&end_date=${adjustedEndDateStr}&daily=temperature_2m_max,temperature_2m_min,temperature_2m_mean,relative_humidity_2m_mean,weather_code,wind_speed_10m_max&temperature_unit=fahrenheit&windspeed_unit=mph&timezone=auto`;
+        const url = `https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lon}&start_date=${startDate}&end_date=${adjustedEndDateStr}&daily=weather_code,temperature_2m_max,temperature_2m_min,temperature_2m_mean,relative_humidity_2m_mean,wind_speed_10m_max,precipitation_sum&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&timezone=auto`;
         
         try {
             const response = await fetch(url);
@@ -386,7 +388,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 tempMin: daily.temperature_2m_min[i],
                 humidity: daily.relative_humidity_2m_mean ? daily.relative_humidity_2m_mean[i] : 50, // Default if not available
                 condition: codeToDescription(daily.weather_code[i]),
-                wind: daily.wind_speed_10m_max[i]
+                wind: daily.wind_speed_10m_max[i],
+                precipitation: daily.precipitation_sum ? daily.precipitation_sum[i] : 0
             };
             
             result.push(day);
@@ -440,6 +443,10 @@ document.addEventListener('DOMContentLoaded', function() {
             humidityCell.textContent = `${Math.round(dayData.humidity)}%`;
             row.appendChild(humidityCell);
             
+            const precipitationCell = document.createElement('td');
+            precipitationCell.textContent = `${dayData.precipitation?.toFixed(2) || '0.00'} in`;
+            row.appendChild(precipitationCell);
+            
             const windCell = document.createElement('td');
             windCell.textContent = `${Math.round(dayData.wind)} mph`;
             row.appendChild(windCell);
@@ -451,7 +458,7 @@ document.addEventListener('DOMContentLoaded', function() {
         createTemperatureChart(data);
     }
     
-    // Create temperature chart from historical data
+    // Create chart with selectable metrics
     function createTemperatureChart(data) {
         // Show the graph container
         graphContainer.classList.remove('hidden');
@@ -459,11 +466,99 @@ document.addEventListener('DOMContentLoaded', function() {
         // First, get the data in chronological order (oldest to newest)
         const chronologicalData = [...data].sort((a, b) => a.date - b.date);
         
-        // Extract dates and temperatures
+        // Extract dates and data for all metrics
         const dates = chronologicalData.map(day => day.date.toLocaleDateString());
         const temperatures = chronologicalData.map(day => Math.round(day.temp));
+        const humidities = chronologicalData.map(day => Math.round(day.humidity));
+        const precipitations = chronologicalData.map(day => day.precipitation ? parseFloat(day.precipitation.toFixed(2)) : 0);
+        const windSpeeds = chronologicalData.map(day => Math.round(day.wind));
         
-        // Calculate 7-day moving average
+        // Function to update chart when metric changes
+        const updateChart = (metric) => {
+            let dataset;
+            let label;
+            let unit;
+            let color;
+            let yAxisLabel;
+            
+            switch(metric) {
+                case 'humidity':
+                    dataset = humidities;
+                    label = 'Humidity';
+                    unit = '%';
+                    color = 'rgba(120, 200, 255, 0.15)';
+                    yAxisLabel = 'Humidity (%)';
+                    break;
+                case 'precipitation':
+                    dataset = precipitations;
+                    label = 'Precipitation';
+                    unit = 'in';
+                    color = 'rgba(64, 156, 255, 0.15)';
+                    yAxisLabel = 'Precipitation (in)';
+                    break;
+                case 'wind':
+                    dataset = windSpeeds;
+                    label = 'Wind Speed';
+                    unit = 'mph';
+                    color = 'rgba(175, 82, 222, 0.15)';
+                    yAxisLabel = 'Wind Speed (mph)';
+                    break;
+                default: // temperature
+                    dataset = temperatures;
+                    label = 'Temperature';
+                    unit = '°F';
+                    color = 'rgba(0, 113, 227, 0.15)';
+                    yAxisLabel = 'Temperature (°F)';
+            }
+            
+            // Calculate 7-day moving average for the selected metric
+            const movingAvg = calculateMovingAverage(dataset, 7);
+            
+            // Update chart data
+            tempChart.data.datasets[0].data = dataset;
+            tempChart.data.datasets[0].label = `Daily ${label} (${unit})`;
+            tempChart.data.datasets[0].backgroundColor = color;
+            tempChart.data.datasets[1].data = movingAvg;
+            tempChart.data.datasets[1].label = `7-Day Average ${label}`;
+            
+            // Update y-axis title and format
+            tempChart.options.scales.y.title.text = yAxisLabel;
+            
+            // Update y-axis tick format based on the unit
+            tempChart.options.scales.y.ticks.callback = function(value) {
+                if (unit === '°F' || unit === '°C') {
+                    return value + '°';
+                } else {
+                    return value + (unit ? ` ${unit}` : '');
+                }
+            };
+            
+            // Set appropriate min and max values for the y-axis based on the data
+            const min = Math.min(...dataset);
+            const max = Math.max(...dataset);
+            const range = max - min;
+            
+            // For precipitation, start at 0 and add padding to the top
+            if (metric === 'precipitation') {
+                tempChart.options.scales.y.min = 0;
+                tempChart.options.scales.y.max = max + (range * 0.1);
+            } else {
+                // For other metrics, add padding to both top and bottom
+                tempChart.options.scales.y.min = min - (range * 0.1);
+                tempChart.options.scales.y.max = max + (range * 0.1);
+            }
+            
+            // Update the chart
+            tempChart.update();
+        };
+        
+        // Add event listener to the metric selector
+        const metricSelector = document.getElementById('metric-selector');
+        metricSelector.addEventListener('change', (e) => {
+            updateChart(e.target.value);
+        });
+        
+        // Calculate 7-day moving average for initial temperature data
         const movingAvgTemps = calculateMovingAverage(temperatures, 7);
         
         // If there's an existing chart, destroy it
@@ -593,7 +688,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         }
                     },
                     y: {
-                        display: true,
+                        title: {
+                            display: true,
+                            text: 'Temperature (°F)'
+                        },
                         grid: {
                             color: 'rgba(0, 0, 0, 0.05)'
                         },
@@ -602,10 +700,14 @@ document.addEventListener('DOMContentLoaded', function() {
                                 family: "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif",
                                 size: 11
                             },
-                            color: '#86868b' // Apple secondary text color
+                            color: '#86868b',
+                            callback: function(value) {
+                                return value + '°';
+                            }
                         },
-                        suggestedMin: Math.min(...temperatures) - 5,
-                        suggestedMax: Math.max(...temperatures) + 5
+                        // Set appropriate min and max values for the y-axis based on the data
+                        min: Math.min(...temperatures) - ((Math.max(...temperatures) - Math.min(...temperatures)) * 0.1),
+                        max: Math.max(...temperatures) + ((Math.max(...temperatures) - Math.min(...temperatures)) * 0.1)
                     }
                 }
             }

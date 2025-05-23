@@ -54,6 +54,13 @@
                         <p id="wind"></p>
                     </div>
                 </div>
+                <div class="detail-item">
+                    <i class="fas fa-cloud-rain"></i>
+                    <div>
+                        <p>Precipitation</p>
+                        <p id="precipitation"></p>
+                    </div>
+                </div>
             </div>
             
             <!-- Historical Weather Data Section -->
@@ -70,6 +77,7 @@
                                 <th>Temperature</th>
                                 <th>Condition</th>
                                 <th>Humidity</th>
+                                <th>Precipitation</th>
                                 <th>Wind</th>
                             </tr>
                         </thead>
@@ -79,7 +87,15 @@
                     </table>
                 </div>
                 <div id="graph-container" class="graph-container hidden">
-                    <h4>Temperature Trend</h4>
+                    <div class="graph-controls">
+                        <h4>Weather Trend</h4>
+                        <select id="metric-selector">
+                            <option value="temperature">Temperature</option>
+                            <option value="humidity">Humidity</option>
+                            <option value="precipitation">Precipitation</option>
+                            <option value="wind">Wind Speed</option>
+                        </select>
+                    </div>
                     <canvas id="temperature-chart"></canvas>
                 </div>
                 <div id="historical-error" class="error-message hidden"></div>

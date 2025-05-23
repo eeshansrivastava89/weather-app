@@ -148,8 +148,8 @@ h1 {
     border-radius: 16px;
     padding: 1.5rem;
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 1.2rem;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
     margin-bottom: 2rem;
 }
 
@@ -159,9 +159,10 @@ h1 {
 }
 
 .detail-item i {
-    font-size: 1.5rem;
+    font-size: 1.4rem;
     color: #0071e3; /* Apple blue */
-    margin-right: 0.8rem;
+    margin-right: 0.6rem;
+    flex-shrink: 0;
 }
 
 .detail-item p:first-child {
@@ -174,7 +175,10 @@ h1 {
     font-weight: 500;
     color: #1d1d1f;
     margin-top: 0.2rem;
-    font-size: 1.05rem;
+    font-size: 0.95rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* Historical Data Styles */
