@@ -1,14 +1,15 @@
 # Weather App
 
-A web application that displays current and historical weather information for US zip codes.
+A modern, Apple-inspired web application that displays current and historical weather information for US zip codes.
 
 ## Features
 
 * Current weather data by zip code (temperature, conditions, humidity, wind)
 * Historical weather data for the past 90 days
+* 8-day weather forecast
 * Interactive temperature trend chart
-* Data sourced from official NOAA weather stations
-* Responsive design for mobile and desktop
+* Data sourced from Open-Meteo API
+* Clean, Apple-inspired design with responsive layout for mobile and desktop
 
 ## Technologies Used
 
@@ -55,13 +56,11 @@ To deploy your own instance:
 ## Application Structure
 
 * **index.html**: Main structure and UI
-* **style.css**: Styling and responsive design
-* **script.js**: Core functionality and OpenWeatherMap integration
-* **noaa-api.js**: NOAA API integration for historical data
+* **style.css**: Styling and responsive design with Apple-inspired aesthetics
+* **script.js**: Core functionality and Open-Meteo API integration
 
 ## Troubleshooting
 
-* API limits: OpenWeatherMap (60 calls/minute), NOAA (1,000 requests/day)
 * Remote locations may have limited historical data
 * Check browser console (F12) for detailed error messages
 
