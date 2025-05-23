@@ -2,67 +2,91 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif;
 }
 
 body {
-    background: linear-gradient(135deg, #72b1d9, #4b6cb7);
+    background-color: #f5f5f7; /* Light gray Apple background */
+    background-image: linear-gradient(to bottom, #aec4e5, #f5f5f7);
     min-height: 100vh;
     display: flex;
     justify-content: center;
     align-items: flex-start;
     padding: 2rem 0;
-    color: #333;
+    color: #1d1d1f; /* Apple's dark text color */
     overflow-y: auto;
-    /* Force GitHub Pages rebuild */
 }
 
 .container {
-    background-color: rgba(255, 255, 255, 0.9);
-    padding: 2rem;
-    border-radius: 1rem;
-    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.2);
+    background-color: rgba(255, 255, 255, 0.95);
+    padding: 2.5rem;
+    border-radius: 20px; /* More rounded corners */
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08); /* Subtle Apple-like shadow */
     width: 100%;
     max-width: 500px;
     text-align: center;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.18);
 }
 
 h1 {
     margin-bottom: 1.5rem;
-    color: #4b6cb7;
+    color: #1d1d1f; /* Dark Apple text */
+    font-weight: 600; /* SF Pro semibold */
+    letter-spacing: -0.02em; /* Tighter kerning like Apple uses */
 }
 
 .search-box {
     display: flex;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1.8rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    border-radius: 10px;
 }
 
 .search-box input {
     flex: 1;
-    padding: 0.8rem;
-    border: 1px solid #ccc;
-    border-radius: 0.5rem 0 0 0.5rem;
+    padding: 0.9rem 1.2rem;
+    border: none;
+    background-color: #f5f5f7; /* Light gray Apple background */
+    border-radius: 10px 0 0 10px;
     outline: none;
     font-size: 1rem;
+    color: #1d1d1f;
+    transition: background-color 0.2s;
+}
+
+.search-box input:focus {
+    background-color: #ebebf0;
+}
+
+.search-box input::placeholder {
+    color: #86868b;
 }
 
 .search-box button {
-    background-color: #4b6cb7;
+    background-color: #0071e3; /* Apple blue */
     color: white;
     border: none;
     padding: 0 1.5rem;
-    border-radius: 0 0.5rem 0.5rem 0;
+    border-radius: 0 10px 10px 0;
     cursor: pointer;
     font-size: 1rem;
-    transition: background-color 0.3s;
+    font-weight: 500;
+    transition: background-color 0.2s, transform 0.1s;
 }
 
 .search-box button:hover {
-    background-color: #3a57a6;
+    background-color: #0077ED; /* Slightly lighter blue */
+}
+
+.search-box button:active {
+    background-color: #005bbf; /* Darker blue when pressed */
+    transform: scale(0.98);
 }
 
 #error-message {
-    color: #e74c3c;
+    color: #ff3b30; /* Apple red */
     margin-bottom: 1rem;
     font-weight: 500;
 }
@@ -76,48 +100,57 @@ h1 {
 }
 
 .location h2 {
-    font-size: 2rem;
-    color: #333;
+    font-size: 2.5rem;
+    color: #1d1d1f;
     margin-bottom: 0.3rem;
+    font-weight: 600;
+    letter-spacing: -0.03em;
 }
 
 .location p {
-    color: #666;
+    color: #86868b; /* Apple secondary text color */
+    font-size: 0.95rem;
 }
 
 .weather-info {
     display: flex;
     justify-content: center;
     align-items: center;
-    margin-bottom: 1.5rem;
+    margin-bottom: 2rem;
 }
 
 .weather-icon img {
-    width: 100px;
-    height: 100px;
+    width: 110px;
+    height: 110px;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
 }
 
 .temperature {
     text-align: center;
-    margin-left: 1rem;
+    margin-left: 1.5rem;
 }
 
 .temperature h2 {
-    font-size: 2.5rem;
-    color: #333;
+    font-size: 3.5rem;
+    color: #1d1d1f;
+    font-weight: 300; /* Apple uses thin fonts for large numbers */
+    letter-spacing: -0.02em;
 }
 
 .temperature p {
-    color: #666;
+    color: #86868b;
+    font-size: 1rem;
+    margin-top: 0.3rem;
 }
 
 .details {
-    background-color: rgba(75, 108, 183, 0.1);
-    border-radius: 0.5rem;
+    background-color: #f5f5f7; /* Light gray Apple background */
+    border-radius: 16px;
     padding: 1.5rem;
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
-    gap: 1rem;
+    gap: 1.2rem;
+    margin-bottom: 2rem;
 }
 
 .detail-item {
@@ -127,54 +160,58 @@ h1 {
 
 .detail-item i {
     font-size: 1.5rem;
-    color: #4b6cb7;
+    color: #0071e3; /* Apple blue */
     margin-right: 0.8rem;
 }
 
 .detail-item p:first-child {
-    color: #666;
-    font-size: 0.9rem;
+    color: #86868b; /* Apple secondary text */
+    font-size: 0.85rem;
+    font-weight: 500; /* Medium weight for labels */
 }
 
 .detail-item p:last-child {
     font-weight: 500;
-    color: #333;
+    color: #1d1d1f;
     margin-top: 0.2rem;
+    font-size: 1.05rem;
 }
 
 /* Historical Data Styles */
 .historical-section {
     margin-top: 2rem;
-    border-top: 1px solid #e1e1e1;
-    padding-top: 1.5rem;
+    border-top: 1px solid rgba(0, 0, 0, 0.1); /* Subtle divider */
+    padding-top: 2rem;
 }
 
 .historical-section h3 {
-    color: #4b6cb7;
-    margin-bottom: 1rem;
+    color: #1d1d1f;
+    margin-bottom: 1.2rem;
     font-size: 1.3rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
 }
 
 .data-source-container {
-    margin-bottom: 12px;
+    margin-bottom: 16px;
     text-align: right;
 }
 
 .data-source-label {
     display: inline-block;
-    padding: 4px 10px;
-    border-radius: 4px;
-    font-size: 0.85rem;
+    padding: 5px 12px;
+    border-radius: 15px; /* Pill shaped like Apple */
+    font-size: 0.8rem;
     font-weight: 500;
 }
 
 .data-source-label.noaa {
-    background-color: #4CAF50;
+    background-color: #34c759; /* Apple green */
     color: white;
 }
 
 .data-source-label.simulated {
-    background-color: #FF9800;
+    background-color: #ff9500; /* Apple orange */
     color: white;
 }
 
@@ -183,23 +220,27 @@ h1 {
     margin-bottom: 1rem;
     max-height: 300px;
     overflow-y: auto;
+    border-radius: 12px;
+    box-shadow: 0 1px 5px rgba(0, 0, 0, 0.05); /* Apple subtle shadow */
 }
 
 .graph-container {
     margin-top: 2rem;
     margin-bottom: 1.5rem;
-    padding: 1rem;
-    background-color: rgba(255, 255, 255, 0.7);
-    border-radius: 0.5rem;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    padding: 1.5rem;
+    background-color: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05); /* Apple subtle shadow */
 }
 
 .graph-container h4 {
     margin-top: 0;
-    margin-bottom: 1rem;
-    color: #4b6cb7;
+    margin-bottom: 1.5rem;
+    color: #1d1d1f;
     font-size: 1.1rem;
     text-align: center;
+    font-weight: 600;
+    letter-spacing: -0.01em;
 }
 
 #temperature-chart {
@@ -211,50 +252,88 @@ h1 {
 #historical-table {
     width: 100%;
     border-collapse: collapse;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-    border: 2px solid #4b6cb7;
-    border-radius: 8px;
+    border: none;
+    border-radius: 12px;
     overflow: hidden;
+    font-size: 0.9rem;
 }
 
 #historical-table th,
 #historical-table td {
-    padding: 0.8rem;
+    padding: 1rem 1.2rem;
     text-align: left;
-    border-bottom: 1px solid #e1e1e1;
-    border-right: 1px solid #e1e1e1;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    border-right: none; /* Remove vertical borders for Apple's clean look */
 }
 
 #historical-table th {
-    background-color: #4b6cb7;
-    color: white;
+    background-color: #f5f5f7; /* Light gray Apple header */
+    color: #1d1d1f;
+    font-weight: 600;
     position: sticky;
     top: 0;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* Override any banding with explicit background color */
+#historical-table tr {
+    background-color: white;
+    transition: background-color 0.2s ease;
 }
 
 #historical-table tr:nth-child(even) {
-    background-color: rgba(75, 108, 183, 0.05);
+    background-color: white; /* Explicitly white instead of transparent */
 }
 
-#historical-table tr:hover {
-    background-color: rgba(75, 108, 183, 0.1);
+#historical-table tbody tr:hover:not(.forecast-row) {
+    background-color: rgba(0, 113, 227, 0.04); /* Very subtle Apple blue hover */
 }
 
-.loading-message {
-    color: #4b6cb7;
-    margin: 1rem 0;
-    font-style: italic;
+/* Styles for forecast rows - higher specificity to override base styles */
+#historical-table tbody#historical-data tr.forecast-row {
+    background-color: rgba(255, 149, 0, 0.04); /* Very subtle orange background */
+    border-left: 2px solid #ff9500; /* Apple orange color */
+}
+
+#historical-table tbody#historical-data tr.forecast-row:hover {
+    background-color: rgba(255, 149, 0, 0.1); /* Slightly stronger on hover */
 }
 
 .error-message {
-    color: #e74c3c;
+    color: #ff3b30; /* Apple red */
     margin: 1rem 0;
     font-weight: 500;
+    font-size: 0.95rem;
+    padding: 0.75rem;
+    background-color: rgba(255, 59, 48, 0.1);
+    border-radius: 8px;
 }
 
 /* Make container wider for historical data */
 @media (min-width: 768px) {
     .container {
         max-width: 800px;
+        padding: 2.5rem;
     }
+}
+
+/* Add Apple-like scrollbar styling */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.3);
 }

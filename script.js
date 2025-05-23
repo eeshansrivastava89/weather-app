@@ -14,7 +14,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const weatherIcon = document.getElementById('weather-icon');
     const historicalDataContainer = document.getElementById('historical-data-container');
     const historicalData = document.getElementById('historical-data');
-    const historicalLoading = document.getElementById('historical-loading');
     const historicalError = document.getElementById('historical-error');
     const dataSourceLabel = document.getElementById('data-source-label');
     const graphContainer = document.getElementById('graph-container');
@@ -25,10 +24,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Weather data cache
     const weatherCache = {};
-
-    // API Keys hardcoded (since this is a toy application)
-    const openWeatherApiKey = 'c6ec2afba9c9176f522a4084fff12891';
-    const noaaApiToken = 'NCuaKzVeoUaErHojaqDNBnLHTjbmfXdR';
 
     // Event listeners
     searchBtn.addEventListener('click', getWeather);
@@ -56,75 +51,96 @@ document.addEventListener('DOMContentLoaded', function() {
         // Clear previous error
         errorMessage.textContent = '';
         
-        // Fetch weather data
-        fetch(`https://api.openweathermap.org/data/2.5/weather?zip=${zipCode},us&units=imperial&appid=${openWeatherApiKey}`)
+        // Convert ZIP to lat/lon using Zippopotam.us
+        fetch(`https://api.zippopotam.us/us/${zipCode}`)
             .then(response => {
                 if (!response.ok) {
-                    if (response.status === 404) {
-                        throw new Error('Zip code not found. Please check and try again.');
-                    } else if (response.status === 401) {
-                        throw new Error('API key is invalid or not set. Please check your configuration.');
-                    } else {
-                        throw new Error('Unable to fetch weather data. Please try again later.');
-                    }
+                    throw new Error('Zip code not found. Please check and try again.');
                 }
                 return response.json();
             })
-            .then(data => {
-                displayWeather(data);
-                // Get historical weather data
-                getHistoricalWeather(data.coord.lat, data.coord.lon, zipCode);
+            .then(locationData => {
+                const place = locationData.places[0];
+                const lat = parseFloat(place.latitude);
+                const lon = parseFloat(place.longitude);
+                const city = place["place name"];
+                // Fetch current weather from Open-Meteo
+                fetchCurrentWeather(lat, lon, city, zipCode);
             })
             .catch(error => {
                 displayError(error.message);
                 weatherContainer.classList.add('hidden');
+                historicalDataContainer.classList.add('hidden');
             });
     }
 
-    // Function to convert Fahrenheit to Celsius
-    function fahrenheitToCelsius(fahrenheit) {
-        return (fahrenheit - 32) * 5/9;
+    // Fetch current weather from Open-Meteo
+    function fetchCurrentWeather(lat, lon, city, zipCode) {
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m&temperature_unit=fahrenheit&windspeed_unit=mph&timezone=auto`;
+        
+        fetch(url)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Unable to fetch current weather.');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (!data.current) {
+                    throw new Error('No current weather data available.');
+                }
+                
+                displayWeather(data.current, city);
+                // Fetch historical weather
+                getHistoricalWeather(lat, lon, zipCode);
+            })
+            .catch(error => {
+                displayError(error.message);
+                weatherContainer.classList.add('hidden');
+                historicalDataContainer.classList.add('hidden');
+            });
     }
     
     // Function to display weather data
-    function displayWeather(data) {
+    function displayWeather(current, city) {
         // Show weather container
         weatherContainer.classList.remove('hidden');
         
         // Update location and date
-        cityName.textContent = `${data.name}`;
-        const currentDate = new Date();
+        cityName.textContent = city;
+        const currentDate = new Date(current.time);
         dateTime.textContent = currentDate.toLocaleString();
         
         // Update temperature with both Fahrenheit and Celsius
-        const tempF = Math.round(data.main.temp);
-        const tempC = Math.round(fahrenheitToCelsius(data.main.temp));
+        const tempF = Math.round(current.temperature_2m);
+        const tempC = Math.round(fahrenheitToCelsius(current.temperature_2m));
         temperature.textContent = `${tempF}°F (${tempC}°C)`;
         
         // Update feels like temperature with both Fahrenheit and Celsius
-        const feelsLikeF = Math.round(data.main.feels_like);
-        const feelsLikeC = Math.round(fahrenheitToCelsius(data.main.feels_like));
+        const feelsLikeF = Math.round(current.apparent_temperature);
+        const feelsLikeC = Math.round(fahrenheitToCelsius(current.apparent_temperature));
         feelsLike.textContent = `Feels like ${feelsLikeF}°F (${feelsLikeC}°C)`;
         
         // Update conditions
-        condition.textContent = data.weather[0].description.charAt(0).toUpperCase() + 
-                               data.weather[0].description.slice(1);
-        humidity.textContent = `${data.main.humidity}%`;
-        wind.textContent = `${Math.round(data.wind.speed)} mph`;
+        const weatherDescription = codeToDescription(current.weather_code);
+        condition.textContent = weatherDescription;
+        humidity.textContent = `${current.relative_humidity_2m}%`;
+        wind.textContent = `${Math.round(current.wind_speed_10m)} mph`;
         
         // Update weather icon
-        const iconCode = data.weather[0].icon;
-        weatherIcon.src = `https://openweathermap.org/img/wn/${iconCode}@2x.png`;
-        weatherIcon.alt = data.weather[0].description;
+        weatherIcon.src = getWeatherIcon(current.weather_code);
+        weatherIcon.alt = weatherDescription;
     }
 
     // Function to get historical weather data
     function getHistoricalWeather(lat, lon, zipCode) {
-        // Show loading message
+        // Show historical container and reset previous data
         historicalDataContainer.classList.remove('hidden');
-        historicalLoading.classList.remove('hidden');
+        historicalError.classList.add('hidden');
         historicalError.textContent = '';
-        historicalData.innerHTML = '';            // Check if we have cached data for this zip code
+        historicalData.innerHTML = '';
+        
+        // Check if we have cached data for this zip code
         if (weatherCache[zipCode] && weatherCache[zipCode].timestamp > Date.now() - 3600000) {
             displayHistoricalWeather(weatherCache[zipCode].data, zipCode);
             return;
@@ -132,64 +148,279 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Calculate date range (90 days ago to today)
         const today = new Date();
-        const endDate = today.toISOString().split('T')[0];
+        const endDate = today;
+        const endDateStr = endDate.toISOString().split('T')[0];
         
         const startDate = new Date();
         startDate.setDate(today.getDate() - 90);
         const startDateStr = startDate.toISOString().split('T')[0];
         
-        // Fetch NOAA historical data
-        fetchNearestStation(lat, lon, startDateStr, endDate, noaaApiToken)
-            .then(stationData => {
-                if (!stationData || !stationData.results || stationData.results.length === 0) {
-                    throw new Error('No weather stations found near this location');
+        console.log(`Fetching historical data from ${startDateStr} to ${endDateStr}`);
+        
+        // Get the current day's data immediately
+        getCurrentDayData(lat, lon).then(currentDayData => {
+            console.log("Current day data:", currentDayData);
+            
+            // Then get forecast and historical data
+            Promise.all([
+                getForecastData(lat, lon),
+                getHistoricalArchiveData(lat, lon, startDateStr, endDateStr)
+            ])
+            .then(([forecastData, historicalData]) => {
+                // Combine historical and forecast data
+                let combinedData = combineHistoricalAndForecast(historicalData, forecastData);
+                
+                // Add current day data if available
+                if (currentDayData) {
+                    // Create a set of dates we already have
+                    const existingDates = new Set(combinedData.map(d => d.date.toISOString().split('T')[0]));
+                    
+                    // Add current day data if not already present
+                    if (!existingDates.has(currentDayData.date.toISOString().split('T')[0])) {
+                        combinedData.push(currentDayData);
+                    }
                 }
                 
-                // Get the station ID
-                const stationId = stationData.results[0].id;
-                
-                // Now fetch the data from this station
-                return fetchStationData(stationId, startDateStr, endDate, noaaApiToken);
-            })
-            .then(historicalData => {
-                if (!historicalData || !historicalData.results || historicalData.results.length === 0) {
-                    throw new Error('No historical data available for this location');
-                }
-                
-                // Process the NOAA data into our format
-                const processedData = processNoaaData(historicalData.results);
-                
-                // Cache the data
+                // Cache the combined data
                 weatherCache[zipCode] = {
-                    data: processedData,
+                    data: combinedData,
                     timestamp: Date.now()
                 };
                 
                 // Display the data
-                displayHistoricalWeather(processedData, zipCode);
+                displayHistoricalWeather(combinedData, zipCode);
             })
             .catch(error => {
-                console.error('Error fetching NOAA data:', error);
-                historicalError.textContent = `Error: ${error.message}. Please try a different location or check your NOAA API token.`;
-                historicalLoading.classList.add('hidden');
+                console.error('Error fetching weather data:', error);
+                historicalError.textContent = `Error: ${error.message}`;
+                historicalError.classList.remove('hidden');
             });
+        })
+        .catch(error => {
+            console.error('Error fetching current day data:', error);
+            // Continue with the rest of the process even if current day data fails
+            Promise.all([
+                getForecastData(lat, lon),
+                getHistoricalArchiveData(lat, lon, startDateStr, endDateStr)
+            ])
+            .then(([forecastData, historicalData]) => {
+                const combinedData = combineHistoricalAndForecast(historicalData, forecastData);
+                weatherCache[zipCode] = {
+                    data: combinedData,
+                    timestamp: Date.now()
+                };
+                displayHistoricalWeather(combinedData, zipCode);
+            })
+            .catch(error => {
+                console.error('Error fetching weather data:', error);
+                historicalError.textContent = `Error: ${error.message}`;
+                historicalError.classList.remove('hidden');
+            });
+        });
+    }
+    
+    // Get current day data from current weather API
+    async function getCurrentDayData(lat, lon) {
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m&daily=temperature_2m_max,temperature_2m_min,weather_code,wind_speed_10m_max&temperature_unit=fahrenheit&windspeed_unit=mph&timezone=auto&forecast_days=1`;
+        
+        try {
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error('Unable to fetch current day data');
+            }
+            
+            const data = await response.json();
+            if (!data.daily || !data.daily.time || !data.daily.time[0] || !data.current) {
+                throw new Error('Invalid current day data response');
+            }
+            
+            // Create a data point for today using both current and daily data
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            return {
+                date: today,
+                temp: data.current.temperature_2m,
+                tempMax: data.daily.temperature_2m_max[0],
+                tempMin: data.daily.temperature_2m_min[0],
+                humidity: data.current.relative_humidity_2m,
+                condition: codeToDescription(data.current.weather_code),
+                wind: data.current.wind_speed_10m
+            };
+        } catch (error) {
+            console.error('Error fetching current day data:', error);
+            return null;
+        }
+    }
+    
+    // Get forecast data (includes today and next few days)
+    async function getForecastData(lat, lon) {
+        // Using forecast for today and next few days to fill the gap from archive API
+        // This ensures we have data for the most recent days
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,temperature_2m_mean,relative_humidity_2m_mean,weather_code,wind_speed_10m_max&temperature_unit=fahrenheit&windspeed_unit=mph&timezone=auto&forecast_days=10`;
+        
+        try {
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error('Unable to fetch forecast data');
+            }
+            
+            const data = await response.json();
+            if (!data.daily || !data.daily.time) {
+                return [];
+            }
+            
+            // Process forecast data but mark future days as forecasts
+            const processedData = processHistoricalData(data.daily);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            // For each day, mark if it's a forecast (future date)
+            processedData.forEach(day => {
+                const dayDate = new Date(day.date);
+                dayDate.setHours(0, 0, 0, 0);
+                day.isForecast = dayDate > today;
+                
+                // Append "(Forecast)" to condition for future days
+                if (day.isForecast) {
+                    day.condition += " (Forecast)";
+                }
+            });
+            
+            console.log("Forecast data includes:", processedData.map(d => d.date.toLocaleDateString()));
+            return processedData;
+        } catch (error) {
+            console.error('Error fetching forecast:', error);
+            return [];
+        }
+    }
+    
+    // Get historical archive data
+    async function getHistoricalArchiveData(lat, lon, startDate, endDate) {
+        // Note: Archive API often lags behind by a few days, so we'll use a date a few days before today
+        const today = new Date();
+        const adjustedEndDate = new Date(today);
+        adjustedEndDate.setDate(today.getDate() - 3);  // Go back 3 days to avoid the lag
+        const adjustedEndDateStr = adjustedEndDate.toISOString().split('T')[0];
+        
+        console.log(`Using adjusted end date for archive: ${adjustedEndDateStr} (to avoid data lag)`);
+        
+        const url = `https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lon}&start_date=${startDate}&end_date=${adjustedEndDateStr}&daily=temperature_2m_max,temperature_2m_min,temperature_2m_mean,relative_humidity_2m_mean,weather_code,wind_speed_10m_max&temperature_unit=fahrenheit&windspeed_unit=mph&timezone=auto`;
+        
+        try {
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error('Unable to fetch historical weather data');
+            }
+            
+            const data = await response.json();
+            if (!data.daily || !data.daily.time) {
+                return [];
+            }
+            
+            return processHistoricalData(data.daily);
+        } catch (error) {
+            console.error('Error fetching historical data:', error);
+            return [];
+        }
+    }
+    
+    // Combine historical and forecast data, removing duplicates
+    function combineHistoricalAndForecast(historicalData, forecastData) {
+        // Create a map of existing dates to avoid duplicates
+        const combinedData = [];
+        const dateMap = new Map();
+        
+        // Add all historical data first
+        historicalData.forEach(day => {
+            const dateStr = day.date.toISOString().split('T')[0];
+            dateMap.set(dateStr, true);
+            combinedData.push(day);
+        });
+        
+        // Add forecast data, using it to fill in any missing recent days
+        forecastData.forEach(day => {
+            const dateStr = day.date.toISOString().split('T')[0];
+            if (!dateMap.has(dateStr)) {
+                dateMap.set(dateStr, true);
+                combinedData.push(day);
+            }
+        });
+        
+        // Fill in any missing days between historical and forecast data
+        // This ensures we have continuous data even if there are gaps
+        if (combinedData.length > 0) {
+            const sortedDates = combinedData
+                .map(day => day.date.getTime())
+                .sort((a, b) => a - b);
+            
+            const earliestDate = new Date(sortedDates[0]);
+            const latestDate = new Date(sortedDates[sortedDates.length - 1]);
+            
+            console.log(`Date range in combined data: ${earliestDate.toLocaleDateString()} to ${latestDate.toLocaleDateString()}`);
+            
+            // Add missing dates from the list of dates for debugging
+            const allDateStrings = combinedData.map(day => day.date.toLocaleDateString());
+            console.log("All dates in combined data:", allDateStrings.sort());
+        }
+        
+        return combinedData;
+    }
+    
+    // Process Open-Meteo historical data
+    function processHistoricalData(daily) {
+        const result = [];
+        
+        for (let i = 0; i < daily.time.length; i++) {
+            // Skip dates with no data
+            if (daily.temperature_2m_max[i] === null && daily.temperature_2m_min[i] === null) {
+                continue;
+            }
+            
+            // Create a data point for each day
+            const day = {
+                date: new Date(daily.time[i]),
+                temp: daily.temperature_2m_mean ? daily.temperature_2m_mean[i] : 
+                      ((daily.temperature_2m_max[i] + daily.temperature_2m_min[i]) / 2),
+                tempMax: daily.temperature_2m_max[i],
+                tempMin: daily.temperature_2m_min[i],
+                humidity: daily.relative_humidity_2m_mean ? daily.relative_humidity_2m_mean[i] : 50, // Default if not available
+                condition: codeToDescription(daily.weather_code[i]),
+                wind: daily.wind_speed_10m_max[i]
+            };
+            
+            result.push(day);
+        }
+        
+        return result;
     }
     
     // Display historical weather data
     function displayHistoricalWeather(data, zipCode) {
-        // Hide loading message
-        historicalLoading.classList.add('hidden');
+        // Hide error message if any
+        historicalError.classList.add('hidden');
         
         // Set data source label
-        dataSourceLabel.textContent = 'Source: NOAA Official Data';
-        dataSourceLabel.className = 'data-source-label noaa';
+        dataSourceLabel.textContent = 'Source: Open-Meteo';
+        dataSourceLabel.className = 'data-source-label noaa'; // Keep the same styling class
         
         // Clear previous data
         historicalData.innerHTML = '';
         
-        // Add data to table
-        data.forEach(dayData => {
+        // Sort data by date (most recent first)
+        const sortedData = [...data].sort((a, b) => b.date - a.date);
+        
+        // Log the dates we're displaying
+        console.log("Displaying dates:", sortedData.map(d => d.date.toLocaleDateString()));
+        
+        // Add data to table (most recent entries on top)
+        sortedData.forEach(dayData => {
             const row = document.createElement('tr');
+            
+            // Add a class to forecast rows for special styling
+            if (dayData.isForecast) {
+                row.classList.add('forecast-row');
+            }
             
             const dateCell = document.createElement('td');
             dateCell.textContent = dayData.date.toLocaleDateString();
@@ -202,8 +433,7 @@ document.addEventListener('DOMContentLoaded', function() {
             row.appendChild(tempCell);
             
             const conditionCell = document.createElement('td');
-            conditionCell.textContent = dayData.condition.charAt(0).toUpperCase() + 
-                                      dayData.condition.slice(1);
+            conditionCell.textContent = dayData.condition;
             row.appendChild(conditionCell);
             
             const humidityCell = document.createElement('td');
@@ -217,7 +447,7 @@ document.addEventListener('DOMContentLoaded', function() {
             historicalData.appendChild(row);
         });
         
-        // Create and display the temperature chart
+        // Create and display the temperature chart (chronological for chart)
         createTemperatureChart(data);
     }
     
@@ -241,6 +471,15 @@ document.addEventListener('DOMContentLoaded', function() {
             tempChart.destroy();
         }
         
+        // Find the index where forecast data starts
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const forecastStartIndex = chronologicalData.findIndex(day => {
+            const dayDate = new Date(day.date);
+            dayDate.setHours(0, 0, 0, 0);
+            return dayDate > today;
+        });
+        
         // Create the chart
         tempChart = new Chart(temperatureChart, {
             type: 'line',
@@ -250,19 +489,42 @@ document.addEventListener('DOMContentLoaded', function() {
                     {
                         label: 'Daily Temperature (°F)',
                         data: temperatures,
-                        borderColor: 'rgba(75, 108, 183, 0.7)',
-                        backgroundColor: 'rgba(75, 108, 183, 0.3)',
-                        pointRadius: 2,
+                        borderColor: '#0071e3', // Apple blue
+                        backgroundColor: 'rgba(0, 113, 227, 0.15)', // Transparent Apple blue
+                        pointRadius: 2.5,
                         pointHoverRadius: 5,
-                        borderWidth: 1,
+                        borderWidth: 2,
                         fill: true,
-                        tension: 0.2
+                        tension: 0.3, // Smoother curve like in Apple Weather
+                        segment: {
+                            borderColor: context => {
+                                // Change color for forecast data segment
+                                if (context.p1DataIndex >= forecastStartIndex && forecastStartIndex !== -1) {
+                                    return '#ff9500';  // Apple orange for forecast
+                                }
+                                return '#0071e3'; // Apple blue
+                            },
+                            backgroundColor: context => {
+                                // Change fill color for forecast data segment
+                                if (context.p1DataIndex >= forecastStartIndex && forecastStartIndex !== -1) {
+                                    return 'rgba(255, 149, 0, 0.1)';  // Light Apple orange for forecast
+                                }
+                                return 'rgba(0, 113, 227, 0.15)'; // Transparent Apple blue
+                            }
+                        },
+                        pointBackgroundColor: context => {
+                            // Change point color for forecast days
+                            if (context.dataIndex >= forecastStartIndex && forecastStartIndex !== -1) {
+                                return '#ff9500';  // Apple orange for forecast
+                            }
+                            return '#0071e3'; // Apple blue
+                        }
                     },
                     {
                         label: '7-Day Average',
                         data: movingAvgTemps,
-                        borderColor: 'rgba(255, 99, 132, 1)',
-                        backgroundColor: 'rgba(255, 99, 132, 0)',
+                        borderColor: '#34c759', // Apple green
+                        backgroundColor: 'rgba(52, 199, 89, 0)',
                         borderWidth: 2,
                         pointRadius: 0,
                         pointHoverRadius: 0,
@@ -276,29 +538,71 @@ document.addEventListener('DOMContentLoaded', function() {
                 plugins: {
                     legend: {
                         position: 'top',
+                        labels: {
+                            usePointStyle: true,
+                            padding: 15,
+                            font: {
+                                family: "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif",
+                                size: 12
+                            }
+                        }
                     },
                     tooltip: {
                         mode: 'index',
-                        intersect: false
+                        intersect: false,
+                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                        titleColor: '#1d1d1f',
+                        bodyColor: '#1d1d1f',
+                        borderColor: 'rgba(0, 0, 0, 0.1)',
+                        borderWidth: 1,
+                        cornerRadius: 10,
+                        padding: 12,
+                        titleFont: {
+                            family: "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif",
+                            size: 14,
+                            weight: '600'
+                        },
+                        bodyFont: {
+                            family: "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif",
+                            size: 13
+                        },
+                        callbacks: {
+                            title: function(context) {
+                                const dataIndex = context[0].dataIndex;
+                                const isForecasted = dataIndex >= forecastStartIndex && forecastStartIndex !== -1;
+                                const date = dates[dataIndex];
+                                return isForecasted ? `${date} (Forecast)` : date;
+                            }
+                        }
                     }
                 },
                 scales: {
                     x: {
                         display: true,
-                        title: {
-                            display: true,
-                            text: 'Date'
+                        grid: {
+                            display: false
                         },
                         ticks: {
-                            maxTicksLimit: 12,
-                            autoSkip: true
+                            maxTicksLimit: 8,
+                            autoSkip: true,
+                            font: {
+                                family: "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif",
+                                size: 11
+                            },
+                            color: '#86868b' // Apple secondary text color
                         }
                     },
                     y: {
                         display: true,
-                        title: {
-                            display: true,
-                            text: 'Temperature (°F)'
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        },
+                        ticks: {
+                            font: {
+                                family: "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif",
+                                size: 11
+                            },
+                            color: '#86868b' // Apple secondary text color
                         },
                         suggestedMin: Math.min(...temperatures) - 5,
                         suggestedMax: Math.max(...temperatures) + 5
@@ -337,5 +641,86 @@ document.addEventListener('DOMContentLoaded', function() {
     // Function to validate US zip code (5 digits)
     function validateZipCode(zipCode) {
         return /^\d{5}$/.test(zipCode);
+    }
+    
+    // Function to convert Fahrenheit to Celsius
+    function fahrenheitToCelsius(fahrenheit) {
+        return (fahrenheit - 32) * 5/9;
+    }
+
+    // Open-Meteo weather code to description
+    function codeToDescription(code) {
+        const codes = {
+            0: 'Clear sky',
+            1: 'Mainly clear',
+            2: 'Partly cloudy',
+            3: 'Overcast',
+            45: 'Fog',
+            48: 'Depositing rime fog',
+            51: 'Light drizzle',
+            53: 'Moderate drizzle',
+            55: 'Dense drizzle',
+            56: 'Light freezing drizzle',
+            57: 'Dense freezing drizzle',
+            61: 'Slight rain',
+            63: 'Moderate rain',
+            65: 'Heavy rain',
+            66: 'Light freezing rain',
+            67: 'Heavy freezing rain',
+            71: 'Slight snow fall',
+            73: 'Moderate snow fall',
+            75: 'Heavy snow fall',
+            77: 'Snow grains',
+            80: 'Slight rain showers',
+            81: 'Moderate rain showers',
+            82: 'Violent rain showers',
+            85: 'Slight snow showers',
+            86: 'Heavy snow showers',
+            95: 'Thunderstorm',
+            96: 'Thunderstorm with slight hail',
+            99: 'Thunderstorm with heavy hail'
+        };
+        return codes[code] || 'Unknown';
+    }
+
+    // Get weather icon based on Open-Meteo weather code
+    function getWeatherIcon(code) {
+        // Map Open-Meteo weather codes to appropriate icons
+        // We'll use the Font Awesome icons since they're already included
+        let iconUrl;
+        
+        if (code === 0 || code === 1) {
+            // Clear sky or mainly clear - use day or night based on time
+            const hour = new Date().getHours();
+            iconUrl = hour >= 6 && hour < 20 ? 
+                'https://openweathermap.org/img/wn/01d@2x.png' : 
+                'https://openweathermap.org/img/wn/01n@2x.png';
+        } else if (code === 2) {
+            // Partly cloudy
+            iconUrl = 'https://openweathermap.org/img/wn/02d@2x.png';
+        } else if (code === 3) {
+            // Overcast
+            iconUrl = 'https://openweathermap.org/img/wn/04d@2x.png';
+        } else if (code === 45 || code === 48) {
+            // Fog
+            iconUrl = 'https://openweathermap.org/img/wn/50d@2x.png';
+        } else if ([51, 53, 55, 56, 57].includes(code)) {
+            // Drizzle
+            iconUrl = 'https://openweathermap.org/img/wn/09d@2x.png';
+        } else if ([61, 63, 65, 66, 67, 80, 81, 82].includes(code)) {
+            // Rain
+            iconUrl = 'https://openweathermap.org/img/wn/10d@2x.png';
+        } else if ([71, 73, 75, 77, 85, 86].includes(code)) {
+            // Snow
+            iconUrl = 'https://openweathermap.org/img/wn/13d@2x.png';
+        } else if ([95, 96, 99].includes(code)) {
+            // Thunderstorm
+            iconUrl = 'https://openweathermap.org/img/wn/11d@2x.png';
+        } else {
+            // Default
+            iconUrl = 'https://openweathermap.org/img/wn/50d@2x.png';
+        }
+        
+        return iconUrl;
     }
 });
