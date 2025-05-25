@@ -400,6 +400,11 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Display historical weather data
     function displayHistoricalWeather(data, zipCode) {
+        // Reset the metric selector to 'temperature' when displaying new weather data
+        const metricSelector = document.getElementById('metric-selector');
+        if (metricSelector) {
+            metricSelector.value = 'temperature';
+        }
         // Hide error message if any
         historicalError.classList.add('hidden');
         
@@ -526,10 +531,12 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Update y-axis tick format based on the unit
             tempChart.options.scales.y.ticks.callback = function(value) {
+                // Always round to 2 decimal places for numeric values
+                let rounded = typeof value === 'number' ? value.toFixed(2) : value;
                 if (unit === '°F' || unit === '°C') {
-                    return value + '°';
+                    return rounded + '°';
                 } else {
-                    return value + (unit ? ` ${unit}` : '');
+                    return rounded + (unit ? ` ${unit}` : '');
                 }
             };
             
