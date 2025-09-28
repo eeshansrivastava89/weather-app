@@ -1,5 +1,7 @@
 # Weather App
 
+🌦️ **Live Demo:** https://eeshansrivastava89.github.io/weather-app/
+
 A modern, Apple-inspired web application that displays current and historical weather information for US zip codes.
 
 ## Features
